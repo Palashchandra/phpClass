@@ -6,6 +6,10 @@ if (!isset($conn)) {
     die('Database connection could not establish!');
 }
 
+$current_url = sprintf('%s://%s%s', $_SERVER['REQUEST_SCHEME'], $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI']);
+$current_url = explode('?', $current_url);
+$current_url = isset($current_url[0]) ? $current_url[0] : '';
+
 // Form Submission Handling
 $form_submitted = isset($_POST['form_submitted']) ? $_POST['form_submitted'] : '';
 if ($form_submitted == 'yes') {
@@ -22,7 +26,7 @@ if ($form_submitted == 'yes') {
 
         echo 'Form submitted successfully!<br>';
 
-        $sql_insert = "INSERT INTO students (full_name, email_address, password, phone_number) VALUES ('$fullName', '$emailAddress', '$password', '$phoneNumber')";
+        $sql_insert = "INSERT INTO students (full_name, email_address, password, phone_number, status) VALUES ('$fullName', '$emailAddress', '$password', '$phoneNumber', 'active')";
 
         if (!$conn->query($sql_insert)) {
             echo "Error: {$conn->error}";
@@ -44,24 +48,18 @@ if ($form_submitted == 'yes') {
 
         if (!$conn->query($sql_update)) {
             echo "Error: {$conn->error}";
+        } else {
+            header("LOCATION: $current_url");
         }
     }
-
-
 }
-
-
-$current_url = sprintf('%s://%s%s', $_SERVER['REQUEST_SCHEME'], $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI']);
-$current_url = explode('?', $current_url);
-$current_url = isset($current_url[0]) ? $current_url[0] : '';
 
 $user_id = isset($_GET['id']) ? $_GET['id'] : '';
 $action = isset($_GET['action']) ? $_GET['action'] : 'new';
 $current_user = array();
 
 if (!empty($user_id)) {
-    $sql_select = "SELECT * FROM students WHERE `id` = $user_id";
-    $result = $conn->query($sql_select);
+    $result = $conn->query("SELECT * FROM students WHERE `id` = $user_id");
     $current_user = $result->fetch_assoc();
 }
 
@@ -70,6 +68,32 @@ $email_address = isset($current_user['email_address']) ? $current_user['email_ad
 $phone_number = isset($current_user['phone_number']) ? $current_user['phone_number'] : '';
 $row_id = isset($current_user['id']) ? $current_user['id'] : '';
 
+
+// Delete
+if ($action == 'delete') {
+
+    echo "Do you really want to delete {$current_user['full_name']}?<br>";
+    echo "<a href='$current_url?id=$row_id&action=confirm_delete'>Yes</a>&nbsp;&nbsp;&nbsp;&nbsp;";
+    echo "<a href='$current_url'>No</a>";
+
+    die();
+}
+
+// Delete Confirmation
+if ($action == 'confirm_delete') {
+    
+    echo 'Data deleted successfully!<br>';
+
+    $sql_deleted = "UPDATE students 
+                    SET status='deleted'
+                    WHERE id=$row_id";
+
+    if (!$conn->query($sql_deleted)) {
+        header("LOCATION: $current_url");
+    } else {
+        echo "Error deleting record: ";
+    }
+}
 
 ?>
     <!doctype html>
@@ -156,7 +180,7 @@ $row_id = isset($current_user['id']) ? $current_user['id'] : '';
 
                     <?php
 
-                    $sql_select = "SELECT * FROM students WHERE 1";
+                    $sql_select = "SELECT * FROM students WHERE `status` ='active'";
                     $index = 0;
 
                     if (!$result = $conn->query($sql_select)) {
@@ -171,7 +195,7 @@ $row_id = isset($current_user['id']) ? $current_user['id'] : '';
                             <td><?php echo $row['phone_number']; ?></td>
                             <td>
                                 <a type="button" href="<?php echo sprintf('%s?id=%s&action=edit', $current_url, $row['id']); ?>" class="btn btn-secondary"><i class="bi bi-pencil-square"></i></a>
-                                <button type="button" class="btn btn-danger"><i class="bi bi-archive"></i></button>
+                                <a type="button" href="<?php echo sprintf('%s?id=%s&action=delete', $current_url, $row['id']); ?>" class="btn btn-danger"><i class="bi bi-archive"></i></a>
                             </td>
                         </tr>
                     <?php endwhile; ?>
@@ -185,6 +209,7 @@ $row_id = isset($current_user['id']) ? $current_user['id'] : '';
     <script src="js/scripts.js"></script>
     </body>
     </html>
+
 
 <?php
 mysqli_close($conn);
