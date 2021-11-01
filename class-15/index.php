@@ -69,31 +69,6 @@ $phone_number = isset($current_user['phone_number']) ? $current_user['phone_numb
 $row_id = isset($current_user['id']) ? $current_user['id'] : '';
 
 
-// Delete
-if ($action == 'delete') {
-
-    echo "Do you really want to delete {$current_user['full_name']}?<br>";
-    echo "<a href='$current_url?id=$row_id&action=confirm_delete'>Yes</a>&nbsp;&nbsp;&nbsp;&nbsp;";
-    echo "<a href='$current_url'>No</a>";
-
-    die();
-}
-
-// Delete Confirmation
-if ($action == 'confirm_delete') {
-    
-    echo 'Data deleted successfully!<br>';
-
-    $sql_deleted = "UPDATE students 
-                    SET status='deleted'
-                    WHERE id=$row_id";
-
-    if (!$conn->query($sql_deleted)) {
-        header("LOCATION: $current_url");
-    } else {
-        echo "Error deleting record: ";
-    }
-}
 
 ?>
     <!doctype html>
@@ -109,6 +84,38 @@ if ($action == 'confirm_delete') {
     <body>
 
     <div class="container">
+        <?php
+            // Delete
+            if ($action == 'delete') {
+                ?>
+                <div class="text-center mt-5 pt-5">
+                    <?php
+                    echo " <h2 class='mb-4'> Do you really want to delete {$current_user['full_name']}?</h2>";
+                    echo "<a class='btn btn-danger' href='$current_url?id=$row_id&action=confirm_delete'>Yes</a>&nbsp;&nbsp;&nbsp;&nbsp;";
+                    echo "<a class='btn btn btn-primary' href='$current_url'>No</a>";
+                    ?>
+                </div>
+                <?php
+                
+                die();
+            }
+
+            // Delete Confirmation
+            if ($action == 'confirm_delete') {
+                
+                echo 'Data deleted successfully!<br>';
+
+                $sql_deleted = "UPDATE students 
+                                SET status='deleted'
+                                WHERE id=$row_id";
+
+                if (!$conn->query($sql_deleted)) {
+                    header("LOCATION: $current_url");
+                } else {
+                    echo "Error deleting record: ";
+                }
+            }
+        ?>
         <div class="row">
             <div class="col-6">
                 <?php if (!empty($user_id) && empty($current_user)) : ?>
@@ -203,6 +210,10 @@ if ($action == 'confirm_delete') {
                 </table>
             </div>
         </div>
+
+        
+        
+
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
